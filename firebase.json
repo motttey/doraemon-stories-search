@@ -1,0 +1,14 @@
+{
+    "hosting": {
+      "site": "dora-comic-stories-search",
+      "rewrites": [
+        {
+          "source": "**",
+          "run": {
+            "serviceId": "dora-comic-stories-search",
+            "region": "asia-northeast1"
+          }
+        }
+      ]
+    }
+}
