@@ -4,6 +4,8 @@ from langchain_openai import OpenAIEmbeddings
 
 import os
 from dotenv import load_dotenv
+import tempfile
+import boto3
 
 # --- ページ設定 ---
 st.set_page_config(page_title="ドラえもんのコミック検索", page_icon="📚")
@@ -13,18 +15,36 @@ st.title("ドラえもん あらすじから検索")
 # --- FAISS 読み込み ---
 @st.cache_resource
 def load_vectorstore():
-    # .envファイルから環境変数を読み込み
     load_dotenv()
-
-    # openai用のAPIキーを取得
     OPENAPI_API_KEY = os.getenv("chatgpt_secret")
+    S3_AWS_REGION = os.getenv("S3_AWS_REGION")
+    S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
+    IAM_ACCESS_KEY = os.getenv("IAM_ACCESS_KEY")
+    IAM_SECRET_ACCESS_KEY = os.getenv("IAM_SECRET_ACCESS_KEY")
 
     embedding_model = OpenAIEmbeddings(openai_api_key=OPENAPI_API_KEY)
-    return FAISS.load_local(
-        "store/faiss_index",
-        embeddings=embedding_model,
-        allow_dangerous_deserialization=True,
+
+    # S3からFAISSファイル群を一時ディレクトリにダウンロード
+    s3 = boto3.client(
+        "s3",
+        region_name=S3_AWS_REGION,
+        aws_access_key_id=IAM_ACCESS_KEY,
+        aws_secret_access_key=IAM_SECRET_ACCESS_KEY
     )
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        files_to_download = ["index.faiss", "index.pkl"]  # 必要なファイル
+        for file in files_to_download:
+            s3.download_file(S3_BUCKET_NAME, file, os.path.join(tmpdir, file))
+
+        # FAISSを読み込み
+        vectorstore = FAISS.load_local(
+            tmpdir,
+            embeddings=embedding_model,
+            allow_dangerous_deserialization=True,
+        )
+        return vectorstore
+
 
 vectorstore = load_vectorstore()
 
