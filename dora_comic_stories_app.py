@@ -8,9 +8,10 @@ import tempfile
 import boto3
 
 # --- ページ設定 ---
-st.set_page_config(page_title="ドラえもんのコミック検索", page_icon="📚")
+st.set_page_config(page_title="ドラえもん あらすじ検索", page_icon="📚")
 
-st.title("ドラえもん あらすじから検索")
+st.title("ドラえもん あらすじ検索")
+st.markdown("てんとう虫コミックス45巻のあらすじを登場人物や覚えている話の内容から検索できます")
 
 # --- FAISS 読み込み ---
 @st.cache_resource
