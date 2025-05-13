@@ -8,10 +8,11 @@ import tempfile
 import boto3
 
 # --- ページ設定 ---
-st.set_page_config(page_title="ドラえもん あらすじ検索", page_icon="📚")
+st.set_page_config(page_title="アニメドラえもん あらすじ検索", page_icon="📚")
 
-st.title("ドラえもん あらすじ検索")
-st.markdown("てんとう虫コミックス45巻のあらすじを登場人物や覚えている話の内容から検索できます")
+st.title("アニメドラえもん あらすじ検索")
+st.markdown("アニメドラえもんで放送されたおはなしを, 登場人物や覚えている話の内容から検索できます")
+st.markdown("データソース: [ドラえもん おはなしリスト](https://www.tv-asahi.co.jp/doraemon/story/bk/)")
 
 # --- FAISS 読み込み ---
 @st.cache_resource
@@ -19,7 +20,7 @@ def load_vectorstore():
     load_dotenv()
     OPENAPI_API_KEY = os.getenv("chatgpt_secret")
     S3_AWS_REGION = os.getenv("S3_AWS_REGION")
-    S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME_COMIC")
+    S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME_ANIME")
     IAM_ACCESS_KEY = os.getenv("IAM_ACCESS_KEY")
     IAM_SECRET_ACCESS_KEY = os.getenv("IAM_SECRET_ACCESS_KEY")
 
@@ -50,7 +51,7 @@ def load_vectorstore():
 vectorstore = load_vectorstore()
 
 # --- クエリ入力欄 ---
-query = st.text_area("🔍 話のあらすじや特徴を入力してください", height=100)
+query = st.text_area("🔍 おはなしのあらすじや特徴を入力してください", height=100)
 
 # --- 検索ボタン ---
 if st.button("検索"):
@@ -64,12 +65,11 @@ if st.button("検索"):
         for i, (doc, score) in enumerate(results, 1):
             meta = doc.metadata
             title = meta.get("title", "タイトル不明")
-            story_index = meta.get("story_index", "不明")
-            volume = meta.get("volume", "不明")
-            issue_info = meta.get("issue_info", "")
+            broadcasting_date = meta.get("broadcasting_date", "不明")
+            story_index = meta.get("index", "不明")
             summary = doc.page_content.strip()
 
-            with st.expander(f"{i}. {title}（話数: {story_index}, 巻: {volume}, 類似度スコア: {score:.4f}）"):
-                st.markdown("**掲載情報**: " + issue_info)
+            with st.expander(f"{i}. {title}（話数: {story_index}, 類似度スコア: {score:.4f}）"):
+                st.markdown("**放送日**: " + broadcasting_date)
                 st.markdown("**要約**:")
                 st.write(summary)
