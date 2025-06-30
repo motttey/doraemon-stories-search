@@ -6,6 +6,7 @@ import os
 from dotenv import load_dotenv
 import tempfile
 import boto3
+from openai import OpenAI
 
 # --- ページ設定 ---
 st.set_page_config(page_title="ドラえもん あらすじ検索", page_icon="📚")
@@ -58,7 +59,25 @@ if st.button("検索"):
         st.warning("入力が空です。あらすじを入力してください。")
     else:
         with st.spinner("検索中..."):
-            results = vectorstore.similarity_search_with_score(query, k=3)
+            # OpenAI APIでベクトル検索向けにクエリを補正（v1系対応）
+            client = OpenAI(api_key=os.getenv("chatgpt_secret"))
+            prompt = (
+                "あなたは日本語の検索クエリをベクトル検索で最大限ヒットしやすいキーワード列に変換するAIです。"
+                "次のユーザー入力を、不要な語を省き、検索意図が伝わるような簡潔なキーワード列に変換してください。\n"
+                f"ユーザー入力: {query}\n"
+                "ベクトル検索用キーワード列:"
+            )
+            response = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": "あなたは日本語の検索クエリをベクトル検索向けに最適化するAIです。"},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=64,
+                temperature=0.2,
+            )
+            refined_query = response.choices[0].message.content.strip()
+            results = vectorstore.similarity_search_with_score(refined_query, k=3)
 
         st.subheader("🔎 類似エピソード")
         for i, (doc, score) in enumerate(results, 1):
