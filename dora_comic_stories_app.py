@@ -74,7 +74,7 @@ if st.button("検索"):
                     {"role": "user", "content": prompt}
                 ],
                 max_tokens=64,
-                temperature=0.2,
+                temperature=0.05,
             )
             refined_query = response.choices[0].message.content.strip()
             results = vectorstore.similarity_search_with_score(refined_query, k=3)
