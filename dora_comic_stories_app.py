@@ -68,13 +68,13 @@ if st.button("検索"):
                 "ベクトル検索用キーワード列:"
             )
             response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
+                model="gpt-5-mini",
                 messages=[
                     {"role": "system", "content": "あなたは日本語の検索クエリをベクトル検索向けに最適化するAIです。"},
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=64,
-                temperature=0.05,
+                max_completion_tokens=64,
+                # temperature=0.1,
             )
             refined_query = response.choices[0].message.content.strip()
             results = vectorstore.similarity_search_with_score(refined_query, k=3)
